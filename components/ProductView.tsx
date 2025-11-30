@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { CollectibleItem, StoreProfile } from '../types';
-import { AlertTriangle, ZoomIn, X, Share2, DollarSign } from './Icons';
+import { AlertTriangle, ZoomIn, X, Share2, DollarSign, Phone, Mail, MessageCircle, MessageSquare } from './Icons';
 
 interface ProductViewProps {
   item: CollectibleItem;
@@ -12,20 +12,47 @@ interface ProductViewProps {
 const ProductView: React.FC<ProductViewProps> = ({ item, profile, onBack }) => {
   const brandColor = profile.themeColor || '#2563eb';
   const [zoomImage, setZoomImage] = useState<string | null>(null);
+  const [contactModal, setContactModal] = useState<'BUY' | 'OFFER' | null>(null);
 
   const isSold = item.status === 'SOLD';
 
-  const handleContact = () => {
-    // Construct email subject and body
-    const subject = `התעניינות בפריט: ${item.analysis?.itemName}`;
-    const body = `שלום ${profile.ownerName},%0D%0A%0D%0Aאני מעוניין בפריט "${item.analysis?.itemName}" (שנה: ${item.analysis?.year}) שראיתי באתר שלך במחיר ${item.userPrice} ש"ח.%0D%0A%0D%0Aאשמח לתאם בדיקה ורכישה.%0D%0A%0D%0Aתודה.`;
-    window.location.href = `mailto:${profile.email}?subject=${subject}&body=${body}`;
+  // Helper to clean phone number for links (remove dashes, spaces)
+  const cleanPhone = (phone: string) => {
+    return phone.replace(/\D/g, '');
   };
 
-  const handleMakeOffer = () => {
-    const subject = `הצעת מחיר עבור: ${item.analysis?.itemName}`;
-    const body = `שלום ${profile.ownerName},%0D%0A%0D%0Aאני מעוניין להציע מחיר אחר עבור הפריט "${item.analysis?.itemName}" (מחיר מבוקש: ${item.userPrice} ש"ח).%0D%0A%0D%0Aההצעה שלי היא: [הכנס מחיר כאן] ש"ח.%0D%0A%0D%0Aאשמח לשמוע ממך.%0D%0Aתודה.`;
-    window.location.href = `mailto:${profile.email}?subject=${subject}&body=${body}`;
+  const getMessageBody = (type: 'BUY' | 'OFFER') => {
+    if (type === 'BUY') {
+      return `שלום ${profile.ownerName}, אני מעוניין בפריט "${item.analysis?.itemName}" (שנה: ${item.analysis?.year}) שראיתי באתר שלך במחיר ${item.userPrice} ש"ח. אשמח לתאם.`;
+    } else {
+      return `שלום ${profile.ownerName}, אני מעוניין להציע מחיר אחר עבור הפריט "${item.analysis?.itemName}" (מחיר מבוקש: ${item.userPrice} ש"ח). ההצעה שלי היא: [הכנס מחיר כאן] ש"ח.`;
+    }
+  };
+
+  const handleChannelClick = (channel: 'PHONE' | 'WHATSAPP' | 'SMS' | 'EMAIL') => {
+    const phoneClean = cleanPhone(profile.phone);
+    const message = getMessageBody(contactModal || 'BUY');
+    const subject = contactModal === 'BUY' ? `התעניינות בפריט: ${item.analysis?.itemName}` : `הצעת מחיר עבור: ${item.analysis?.itemName}`;
+
+    switch (channel) {
+      case 'PHONE':
+        window.location.href = `tel:${phoneClean}`;
+        break;
+      case 'WHATSAPP':
+        // Ensure Israeli country code if missing and starts with 0
+        let waPhone = phoneClean;
+        if (waPhone.startsWith('0')) waPhone = '972' + waPhone.substring(1);
+        window.open(`https://wa.me/${waPhone}?text=${encodeURIComponent(message)}`, '_blank');
+        break;
+      case 'SMS':
+        // SMS body syntax varies, but this is standard for mobile
+        window.location.href = `sms:${phoneClean}?body=${encodeURIComponent(message)}`;
+        break;
+      case 'EMAIL':
+        window.location.href = `mailto:${profile.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`;
+        break;
+    }
+    setContactModal(null);
   };
 
   const handleShare = (platform: 'whatsapp' | 'facebook') => {
@@ -41,6 +68,66 @@ const ProductView: React.FC<ProductViewProps> = ({ item, profile, onBack }) => {
 
   return (
     <div className="min-h-screen bg-slate-50 py-8 px-4">
+      {/* Contact Options Modal */}
+      {contactModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 animate-in fade-in duration-200">
+           <div className="bg-white rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl">
+             <div className="p-4 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
+               <h3 className="font-bold text-lg text-slate-800">
+                 {contactModal === 'BUY' ? 'יצירת קשר לרכישה' : 'הגשת הצעת מחיר'}
+               </h3>
+               <button onClick={() => setContactModal(null)} className="p-2 hover:bg-slate-200 rounded-full">
+                 <X className="w-5 h-5 text-slate-500" />
+               </button>
+             </div>
+             <div className="p-6 grid grid-cols-2 gap-4">
+                <button 
+                  onClick={() => handleChannelClick('PHONE')}
+                  className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors"
+                >
+                  <div className="p-3 bg-white rounded-full shadow-sm">
+                    <Phone className="w-6 h-6" />
+                  </div>
+                  <span className="font-bold text-sm">חיוג טלפוני</span>
+                </button>
+
+                <button 
+                  onClick={() => handleChannelClick('WHATSAPP')}
+                  className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl bg-green-50 text-green-700 hover:bg-green-100 transition-colors"
+                >
+                  <div className="p-3 bg-white rounded-full shadow-sm">
+                    <MessageCircle className="w-6 h-6" />
+                  </div>
+                  <span className="font-bold text-sm">WhatsApp</span>
+                </button>
+
+                <button 
+                  onClick={() => handleChannelClick('SMS')}
+                  className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl bg-purple-50 text-purple-700 hover:bg-purple-100 transition-colors"
+                >
+                  <div className="p-3 bg-white rounded-full shadow-sm">
+                    <MessageSquare className="w-6 h-6" />
+                  </div>
+                  <span className="font-bold text-sm">הודעת SMS</span>
+                </button>
+
+                <button 
+                  onClick={() => handleChannelClick('EMAIL')}
+                  className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl bg-slate-50 text-slate-700 hover:bg-slate-100 transition-colors"
+                >
+                  <div className="p-3 bg-white rounded-full shadow-sm">
+                    <Mail className="w-6 h-6" />
+                  </div>
+                  <span className="font-bold text-sm">אימייל</span>
+                </button>
+             </div>
+             <div className="p-4 bg-slate-50 text-center text-xs text-slate-400 border-t border-slate-100">
+               ההודעה תנוסח אוטומטית, ניתן לערוך לפני השליחה.
+             </div>
+           </div>
+        </div>
+      )}
+
       {/* Lightbox Modal */}
       {zoomImage && (
         <div className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4 animate-in fade-in duration-200">
@@ -192,14 +279,14 @@ const ProductView: React.FC<ProductViewProps> = ({ item, profile, onBack }) => {
                    {!isSold && (
                     <>
                        <button 
-                        onClick={handleContact}
+                        onClick={() => setContactModal('BUY')}
                         className="w-full py-4 text-white rounded-xl font-bold text-lg hover:opacity-90 shadow-lg transition-all flex items-center justify-center gap-2"
                         style={{ backgroundColor: brandColor }}
                        >
                          צור קשר לרכישה
                        </button>
                        <button 
-                        onClick={handleMakeOffer}
+                        onClick={() => setContactModal('OFFER')}
                         className="w-full py-3 bg-white border-2 text-slate-700 rounded-xl font-bold text-lg hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
                         style={{ borderColor: brandColor, color: brandColor }}
                        >
