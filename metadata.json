@@ -1,0 +1,7 @@
+{
+  "name": "Asfanut Pro - Numismatic AI",
+  "description": "Professional Coin & Stamp Collector Assistant with AI analysis and store management.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
