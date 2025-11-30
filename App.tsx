@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { ViewState, StoreProfile, CollectibleItem, ItemType, AIAnalysisResult } from './types';
 import Setup from './components/Setup';
@@ -66,6 +67,8 @@ const App: React.FC = () => {
         }
       } catch (error) {
         console.error("Failed to load data from DB", error);
+        // If server is down, we might want to stay on setup but show error? 
+        // For now, setup is the fallback.
         setView('setup');
       } finally {
         setIsLoading(false);
@@ -76,30 +79,44 @@ const App: React.FC = () => {
   }, []);
 
   const saveProfile = async (newProfile: StoreProfile) => {
-    await saveProfileToDB(newProfile);
-    setProfile(newProfile);
-    setIsAuthenticated(true); // Auto login after setup/update
-    
-    // Slight delay to ensure state update before render switch
-    setTimeout(() => {
-        setView('dashboard');
-    }, 100);
+    try {
+      await saveProfileToDB(newProfile);
+      setProfile(newProfile);
+      setIsAuthenticated(true); // Auto login after setup/update
+      
+      // Slight delay to ensure state update before render switch
+      setTimeout(() => {
+          setView('dashboard');
+      }, 100);
+    } catch (error) {
+      console.error(error);
+      alert(`שגיאה בשמירת הפרופיל.\nאנא וודא שקובץ השרת (server.js) רץ ברקע.\n\nפרטים טכניים: ${error instanceof Error ? error.message : error}`);
+    }
   };
 
   const saveItem = async (newItem: CollectibleItem) => {
-    await saveItemToDB(newItem);
-    // Reload items from DB to ensure sort order and consistency
-    const updatedItems = await getItemsFromDB();
-    setItems(updatedItems);
-    setEditingContext(null);
-    setView('dashboard');
+    try {
+      await saveItemToDB(newItem);
+      // Reload items from DB to ensure sort order and consistency
+      const updatedItems = await getItemsFromDB();
+      setItems(updatedItems);
+      setEditingContext(null);
+      setView('dashboard');
+    } catch (error) {
+      console.error(error);
+      alert(`שגיאה בשמירת הפריט.\nאנא וודא שהשרת מחובר.\n\nפרטים: ${error instanceof Error ? error.message : error}`);
+    }
   };
 
   const deleteItem = async (id: string) => {
     if (confirm("האם אתה בטוח שברצונך למחוק פריט זה?")) {
-      await deleteItemFromDB(id);
-      const updatedItems = await getItemsFromDB();
-      setItems(updatedItems);
+      try {
+        await deleteItemFromDB(id);
+        const updatedItems = await getItemsFromDB();
+        setItems(updatedItems);
+      } catch (error) {
+        alert("שגיאה במחיקת הפריט.");
+      }
     }
   };
 
@@ -120,7 +137,7 @@ const App: React.FC = () => {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center">
         <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4"></div>
-        <p className="text-slate-500 font-medium">טוען נתונים...</p>
+        <p className="text-slate-500 font-medium">טוען נתונים מהשרת...</p>
       </div>
     );
   }

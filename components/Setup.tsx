@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { StoreProfile } from '../types';
 import { Settings } from './Icons';
@@ -26,6 +27,7 @@ const Setup: React.FC<SetupProps> = ({ initialProfile, onSave, onCancel }) => {
   const [suggestedColors, setSuggestedColors] = useState<string[]>([]);
   const [isAnalyzingColor, setIsAnalyzingColor] = useState(false);
   const [useCustomDesign, setUseCustomDesign] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
   const handleChange = (field: keyof StoreProfile, value: string | boolean) => {
     setProfile(prev => ({ ...prev, [field]: value }));
@@ -63,10 +65,15 @@ const Setup: React.FC<SetupProps> = ({ initialProfile, onSave, onCancel }) => {
     setUseCustomDesign(false);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (profile.termsAccepted && profile.password) {
-      onSave(profile);
+      setIsSaving(true);
+      try {
+        await onSave(profile);
+      } catch (e) {
+        setIsSaving(false);
+      }
     }
   };
 
@@ -263,7 +270,8 @@ const Setup: React.FC<SetupProps> = ({ initialProfile, onSave, onCancel }) => {
             <button
               type="button"
               onClick={onCancel}
-              className="flex-1 py-3 rounded-xl font-bold text-lg border border-slate-300 text-slate-600 hover:bg-slate-50 transition-colors"
+              disabled={isSaving}
+              className="flex-1 py-3 rounded-xl font-bold text-lg border border-slate-300 text-slate-600 hover:bg-slate-50 transition-colors disabled:opacity-50"
             >
               ביטול
             </button>
@@ -271,11 +279,18 @@ const Setup: React.FC<SetupProps> = ({ initialProfile, onSave, onCancel }) => {
           
           <button
             type="submit"
-            disabled={!profile.termsAccepted || !profile.password}
-            className={`flex-1 py-3 rounded-xl font-bold text-lg shadow transition-colors ${profile.termsAccepted && profile.password ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-slate-300 text-slate-500 cursor-not-allowed'}`}
-            style={profile.termsAccepted && profile.password && profile.themeColor ? { backgroundColor: profile.themeColor } : {}}
+            disabled={!profile.termsAccepted || !profile.password || isSaving}
+            className={`flex-1 py-3 rounded-xl font-bold text-lg shadow transition-colors flex items-center justify-center gap-2 ${profile.termsAccepted && profile.password && !isSaving ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-slate-300 text-slate-500 cursor-not-allowed'}`}
+            style={profile.termsAccepted && profile.password && profile.themeColor && !isSaving ? { backgroundColor: profile.themeColor } : {}}
           >
-            {initialProfile ? 'עדכן פרטים' : 'צור חנות'}
+            {isSaving ? (
+              <>
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                שומר נתונים...
+              </>
+            ) : (
+              initialProfile ? 'עדכן פרטים' : 'צור חנות'
+            )}
           </button>
         </div>
       </form>
