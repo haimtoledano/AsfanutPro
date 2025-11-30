@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { StoreProfile } from '../types';
 import { Settings } from './Icons';
@@ -20,13 +21,15 @@ const Setup: React.FC<SetupProps> = ({ initialProfile, onSave, onCancel }) => {
     address: '',
     termsAccepted: false,
     password: '',
-    themeColor: APP_CONFIG.defaultThemeColor
+    themeColor: APP_CONFIG.defaultThemeColor,
+    apiKey: ''
   });
   
   const [suggestedColors, setSuggestedColors] = useState<string[]>([]);
   const [isAnalyzingColor, setIsAnalyzingColor] = useState(false);
   const [useCustomDesign, setUseCustomDesign] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [showApiKey, setShowApiKey] = useState(false);
 
   const handleChange = (field: keyof StoreProfile, value: string | boolean) => {
     setProfile(prev => ({ ...prev, [field]: value }));
@@ -48,13 +51,18 @@ const Setup: React.FC<SetupProps> = ({ initialProfile, onSave, onCancel }) => {
   const handleAnalyzeColors = async () => {
     if (!profile.logoUrl) return;
     
+    // If user hasn't entered a key yet, warn them or try anyway (service handles missing key gracefully for colors)
+    if (!profile.apiKey) {
+      alert("שים לב: מומלץ להזין מפתח API לפני ניתוח הצבעים.");
+    }
+
     setIsAnalyzingColor(true);
     try {
-      const colors = await analyzeLogoColor(profile.logoUrl);
+      const colors = await analyzeLogoColor(profile.logoUrl, profile.apiKey);
       setSuggestedColors(colors);
     } catch (e) {
       console.error(e);
-      alert("שגיאה בניתוח הצבעים.");
+      alert("שגיאה בניתוח הצבעים. וודא שמפתח ה-API תקין.");
     } finally {
       setIsAnalyzingColor(false);
     }
@@ -92,6 +100,35 @@ const Setup: React.FC<SetupProps> = ({ initialProfile, onSave, onCancel }) => {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         
+        {/* API Key Section */}
+        <div className="bg-slate-900 p-6 rounded-xl border border-slate-800 text-white">
+          <h3 className="font-bold text-lg mb-2 text-amber-400">הגדרות AI (חובה)</h3>
+          <p className="text-sm text-slate-400 mb-4">
+            על מנת שהמערכת תוכל לנתח תמונות, עליך לספק מפתח API של Google Gemini.
+            <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-blue-400 hover:text-blue-300 mr-1 underline">
+              לחץ כאן להנפקת מפתח חינם.
+            </a>
+          </p>
+          <div className="relative">
+            <label className="block text-xs font-bold text-slate-500 mb-1">Google Gemini API Key</label>
+            <input
+              type={showApiKey ? "text" : "password"}
+              required
+              value={profile.apiKey || ''}
+              onChange={(e) => handleChange('apiKey', e.target.value)}
+              className="w-full p-3 rounded-lg border border-slate-700 bg-slate-800 text-white focus:ring-2 focus:ring-amber-500 focus:border-transparent font-mono text-sm"
+              placeholder="AIzaSy..."
+            />
+            <button
+              type="button"
+              onClick={() => setShowApiKey(!showApiKey)}
+              className="absolute left-3 top-9 text-xs text-slate-400 hover:text-white"
+            >
+              {showApiKey ? 'הסתר' : 'הצג'}
+            </button>
+          </div>
+        </div>
+
         {/* Logo and Branding Section */}
         <div className="bg-slate-50 p-6 rounded-xl border border-slate-200">
           <div className="flex justify-between items-center mb-4">
@@ -280,9 +317,9 @@ const Setup: React.FC<SetupProps> = ({ initialProfile, onSave, onCancel }) => {
           
           <button
             type="submit"
-            disabled={!profile.termsAccepted || !profile.password || isSaving}
-            className={`flex-1 py-3 rounded-xl font-bold text-lg shadow transition-colors flex items-center justify-center gap-2 ${profile.termsAccepted && profile.password && !isSaving ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-slate-300 text-slate-500 cursor-not-allowed'}`}
-            style={profile.termsAccepted && profile.password && profile.themeColor && !isSaving ? { backgroundColor: profile.themeColor } : {}}
+            disabled={!profile.termsAccepted || !profile.password || !profile.apiKey || isSaving}
+            className={`flex-1 py-3 rounded-xl font-bold text-lg shadow transition-colors flex items-center justify-center gap-2 ${profile.termsAccepted && profile.password && profile.apiKey && !isSaving ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-slate-300 text-slate-500 cursor-not-allowed'}`}
+            style={profile.termsAccepted && profile.password && profile.apiKey && profile.themeColor && !isSaving ? { backgroundColor: profile.themeColor } : {}}
           >
             {isSaving ? (
               <>

@@ -1,16 +1,24 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { ItemType, AIAnalysisResult } from "../types";
+import { getProfileFromDB } from "./db";
 
 export const analyzeCollectibleItem = async (
   frontImageBase64: string,
   backImageBase64: string,
-  type: ItemType
+  type: ItemType,
+  manualApiKey?: string
 ): Promise<AIAnalysisResult> => {
   
-  const apiKey = process.env.API_KEY;
+  // Try manual key first (for testing), then fetch from DB
+  let apiKey = manualApiKey;
+  if (!apiKey) {
+    const profile = await getProfileFromDB();
+    apiKey = profile?.apiKey;
+  }
 
   if (!apiKey) {
-    throw new Error("Missing Google API Key. Ensure process.env.API_KEY is set.");
+    throw new Error("מפתח API חסר. אנא הגדר מפתח Google Gemini במסך ההגדרות.");
   }
 
   const prompt = `
@@ -80,8 +88,12 @@ export const analyzeCollectibleItem = async (
   }
 };
 
-export const analyzeLogoColor = async (imageBase64: string): Promise<string[]> => {
-  const apiKey = process.env.API_KEY;
+export const analyzeLogoColor = async (imageBase64: string, manualApiKey?: string): Promise<string[]> => {
+  let apiKey = manualApiKey;
+  if (!apiKey) {
+    const profile = await getProfileFromDB();
+    apiKey = profile?.apiKey;
+  }
 
   if (!apiKey) {
      console.warn("No API key provided for color analysis");

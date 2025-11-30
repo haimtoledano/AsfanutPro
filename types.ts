@@ -1,3 +1,4 @@
+
 export interface StoreProfile {
   storeName: string;
   logoUrl: string | null;
@@ -8,6 +9,7 @@ export interface StoreProfile {
   termsAccepted: boolean;
   password?: string;
   themeColor?: string;
+  apiKey?: string; // API Key for Google Gemini
 }
 
 export enum ItemType {
@@ -31,7 +33,7 @@ export interface AIAnalysisResult {
 export interface CollectibleItem {
   id: string;
   type: ItemType;
-  status: ItemStatus; // New field for Availability status
+  status: ItemStatus;
   frontImage: string; // Base64
   backImage: string; // Base64
   analysis: AIAnalysisResult | null;
