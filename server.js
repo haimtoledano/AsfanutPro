@@ -15,8 +15,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-// Change default port to 3001
-const PORT = process.env.PORT || 3001;
+// Change default port to 3000 to match standard browser attempts
+const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(bodyParser.json({ limit: '50mb' }));
@@ -119,7 +119,7 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(distPath, 'index.html'));
 });
 
-// Server Start with Auto-Kill Logic for Port 3001
+// Server Start with Auto-Kill Logic for Port
 const startServer = () => {
   const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running at http://0.0.0.0:${PORT}`);
