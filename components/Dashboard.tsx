@@ -1,11 +1,13 @@
+
 import React from 'react';
 import { CollectibleItem, StoreProfile } from '../types';
-import { Plus, Scale } from './Icons';
+import { Plus, Scale, Edit } from './Icons';
 
 interface DashboardProps {
   items: CollectibleItem[];
   profile: StoreProfile;
   onAddItem: () => void;
+  onEditItem: (item: CollectibleItem) => void;
   onDeleteItem: (id: string) => void;
   onViewLegal: () => void;
   onEditProfile: () => void;
@@ -16,6 +18,7 @@ const Dashboard: React.FC<DashboardProps> = ({
   items, 
   profile, 
   onAddItem, 
+  onEditItem,
   onDeleteItem,
   onViewLegal,
   onEditProfile,
@@ -27,7 +30,7 @@ const Dashboard: React.FC<DashboardProps> = ({
       <div className="flex flex-col md:flex-row justify-between items-center mb-10 gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
         <div className="flex items-center gap-4">
           {profile.logoUrl ? (
-            <img src={profile.logoUrl} alt={profile.storeName} className="w-16 h-16 rounded-full object-cover border-2 border-slate-200" />
+            <img src={profile.logoUrl} alt={profile.storeName} className="w-16 h-16 rounded-full object-contain bg-slate-50 border-2 border-slate-200" />
           ) : (
             <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xl">
               {profile.storeName.charAt(0)}
@@ -61,6 +64,7 @@ const Dashboard: React.FC<DashboardProps> = ({
           <button 
             onClick={onAddItem}
             className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold shadow-md transition-colors flex items-center gap-2"
+            style={{ backgroundColor: profile.themeColor }}
           >
             <Plus className="w-5 h-5" />
             פריט חדש
@@ -77,6 +81,7 @@ const Dashboard: React.FC<DashboardProps> = ({
           <button 
             onClick={onAddItem}
             className="px-6 py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition"
+            style={{ backgroundColor: profile.themeColor }}
           >
             הוסף את הפריט הראשון
           </button>
@@ -85,9 +90,13 @@ const Dashboard: React.FC<DashboardProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {items.map((item) => (
             <div key={item.id} className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition-shadow flex flex-col">
-              <div className="relative h-48 bg-slate-100 grid grid-cols-2 gap-0.5">
-                 <img src={item.frontImage} className="w-full h-full object-cover" alt="Front" />
-                 <img src={item.backImage} className="w-full h-full object-cover" alt="Back" />
+              <div className="relative h-48 bg-white grid grid-cols-2 gap-0 border-b border-slate-100">
+                 <div className="flex items-center justify-center p-2 bg-slate-50">
+                    <img src={item.frontImage} className="w-full h-full object-contain" alt="Front" />
+                 </div>
+                 <div className="flex items-center justify-center p-2 bg-slate-50 border-r border-slate-100">
+                    <img src={item.backImage} className="w-full h-full object-contain" alt="Back" />
+                 </div>
                  <div className="absolute top-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded backdrop-blur-sm">
                    {item.type}
                  </div>
@@ -112,14 +121,23 @@ const Dashboard: React.FC<DashboardProps> = ({
                 <div className="pt-4 border-t border-slate-100 mt-auto">
                    <div className="flex justify-between items-end mb-3">
                      <span className="text-xs text-slate-400">המחיר שלי:</span>
-                     <span className="text-xl font-bold text-blue-700">{item.userPrice} ₪</span>
+                     <span className="text-xl font-bold" style={{ color: profile.themeColor || '#2563eb' }}>{item.userPrice} ₪</span>
                    </div>
-                   <button 
-                    onClick={() => onDeleteItem(item.id)}
-                    className="w-full py-2 text-red-500 hover:bg-red-50 rounded text-sm transition-colors"
-                   >
-                     מחק פריט
-                   </button>
+                   <div className="flex gap-2">
+                     <button 
+                      onClick={() => onEditItem(item)}
+                      className="flex-1 py-2 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded text-sm transition-colors flex items-center justify-center gap-1"
+                     >
+                       <Edit className="w-4 h-4" />
+                       ערוך
+                     </button>
+                     <button 
+                      onClick={() => onDeleteItem(item.id)}
+                      className="flex-1 py-2 text-red-500 hover:bg-red-50 rounded text-sm transition-colors border border-transparent hover:border-red-100"
+                     >
+                       מחק
+                     </button>
+                   </div>
                 </div>
               </div>
             </div>

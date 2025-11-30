@@ -1,6 +1,7 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { CollectibleItem, StoreProfile } from '../types';
-import { AlertTriangle } from './Icons';
+import { AlertTriangle, ZoomIn, X } from './Icons';
 
 interface ProductViewProps {
   item: CollectibleItem;
@@ -10,6 +11,7 @@ interface ProductViewProps {
 
 const ProductView: React.FC<ProductViewProps> = ({ item, profile, onBack }) => {
   const brandColor = profile.themeColor || '#2563eb';
+  const [zoomImage, setZoomImage] = useState<string | null>(null);
 
   const handleContact = () => {
     // Construct email subject and body
@@ -20,6 +22,32 @@ const ProductView: React.FC<ProductViewProps> = ({ item, profile, onBack }) => {
 
   return (
     <div className="min-h-screen bg-slate-50 py-8 px-4">
+      {/* Lightbox Modal */}
+      {zoomImage && (
+        <div className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4 animate-in fade-in duration-200">
+           <button 
+             onClick={() => setZoomImage(null)}
+             className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors"
+           >
+             <X className="w-8 h-8" />
+           </button>
+           <img 
+             src={zoomImage} 
+             alt="Zoomed view" 
+             className="max-w-full max-h-[90vh] object-contain rounded-sm shadow-2xl"
+           />
+           <div className="absolute bottom-8 left-0 right-0 text-center pointer-events-none">
+             <span className="bg-black/50 text-white px-4 py-2 rounded-full backdrop-blur-sm text-sm">
+               לחץ מחוץ לתמונה או על ה-X לסגירה
+             </span>
+           </div>
+           <div 
+             className="absolute inset-0 -z-10" 
+             onClick={() => setZoomImage(null)}
+           />
+        </div>
+      )}
+
       <div className="max-w-5xl mx-auto">
         <button 
           onClick={onBack}
@@ -32,22 +60,44 @@ const ProductView: React.FC<ProductViewProps> = ({ item, profile, onBack }) => {
           <div className="grid grid-cols-1 md:grid-cols-2">
             
             {/* Image Gallery */}
-            <div className="bg-slate-100 p-6 md:p-10 flex flex-col gap-6">
-              <div className="relative group">
-                <img 
-                  src={item.frontImage} 
-                  className="w-full rounded-xl shadow-lg hover:shadow-2xl transition-shadow cursor-zoom-in" 
-                  alt="Front side" 
-                />
+            <div className="bg-slate-50 p-6 md:p-10 flex flex-col gap-6 items-center justify-center border-b md:border-b-0 md:border-l border-slate-100">
+              <div 
+                className="relative group w-full bg-white rounded-xl shadow-sm border border-slate-200 p-4 cursor-pointer"
+                onClick={() => setZoomImage(item.frontImage)}
+              >
+                <div className="aspect-square flex items-center justify-center overflow-hidden">
+                    <img 
+                    src={item.frontImage} 
+                    className="max-w-full max-h-full object-contain transition-transform duration-300 group-hover:scale-105" 
+                    alt="Front side" 
+                    />
+                </div>
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/10">
+                   <ZoomIn className="w-10 h-10 text-white drop-shadow-md" />
+                </div>
                 <span className="absolute bottom-3 right-3 bg-black/70 text-white text-xs px-2 py-1 rounded backdrop-blur-sm">צד קדמי</span>
               </div>
-              <div className="relative group">
-                <img 
-                  src={item.backImage} 
-                  className="w-full rounded-xl shadow-lg hover:shadow-2xl transition-shadow cursor-zoom-in" 
-                  alt="Back side" 
-                />
+
+              <div 
+                className="relative group w-full bg-white rounded-xl shadow-sm border border-slate-200 p-4 cursor-pointer"
+                onClick={() => setZoomImage(item.backImage)}
+              >
+                <div className="aspect-square flex items-center justify-center overflow-hidden">
+                    <img 
+                    src={item.backImage} 
+                    className="max-w-full max-h-full object-contain transition-transform duration-300 group-hover:scale-105" 
+                    alt="Back side" 
+                    />
+                </div>
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/10">
+                   <ZoomIn className="w-10 h-10 text-white drop-shadow-md" />
+                </div>
                 <span className="absolute bottom-3 right-3 bg-black/70 text-white text-xs px-2 py-1 rounded backdrop-blur-sm">צד אחורי</span>
+              </div>
+              
+              <div className="text-xs text-slate-400 flex items-center gap-1">
+                 <ZoomIn className="w-3 h-3" />
+                 לחץ על תמונה להגדלה
               </div>
             </div>
 

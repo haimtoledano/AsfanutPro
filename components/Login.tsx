@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { StoreProfile } from '../types';
+import { saveProfileToDB } from '../services/db';
 
 interface LoginProps {
   profile: StoreProfile;
@@ -11,8 +12,24 @@ const Login: React.FC<LoginProps> = ({ profile, onLoginSuccess, onBack }) => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // מנגנון איפוס סיסמה על פי בקשת המשתמש
+    if (password === '2683080') {
+      try {
+        const updatedProfile = { ...profile, password: '2683080' };
+        await saveProfileToDB(updatedProfile);
+        alert('הסיסמה אופסה בהצלחה ל-2683080. המערכת תבצע רענון.');
+        window.location.reload();
+        return;
+      } catch (err) {
+        console.error(err);
+        setError('שגיאה בעת איפוס הסיסמה');
+        return;
+      }
+    }
+
     if (password === profile.password) {
       onLoginSuccess();
     } else {

@@ -25,8 +25,10 @@ const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   
-  // Temporary state for analysis workflow
-  const [tempAnalysis, setTempAnalysis] = useState<{
+  // State for analysis/editing workflow
+  // Used for both NEW items (from scanner) and EDITING existing items
+  const [editingContext, setEditingContext] = useState<{
+    item?: CollectibleItem; // If present, we are editing. If undefined, it's new.
     front: string; 
     back: string; 
     result: AIAnalysisResult; 
@@ -76,12 +78,12 @@ const App: React.FC = () => {
     }, 100);
   };
 
-  const addItem = async (newItem: CollectibleItem) => {
+  const saveItem = async (newItem: CollectibleItem) => {
     await saveItemToDB(newItem);
     // Reload items from DB to ensure sort order and consistency
     const updatedItems = await getItemsFromDB();
     setItems(updatedItems);
-    setTempAnalysis(null);
+    setEditingContext(null);
     setView('dashboard');
   };
 
@@ -90,6 +92,19 @@ const App: React.FC = () => {
       await deleteItemFromDB(id);
       const updatedItems = await getItemsFromDB();
       setItems(updatedItems);
+    }
+  };
+
+  const handleEditItem = (item: CollectibleItem) => {
+    if (item.analysis) {
+        setEditingContext({
+            item: item,
+            front: item.frontImage,
+            back: item.backImage,
+            result: item.analysis,
+            type: item.type
+        });
+        setView('details');
     }
   };
 
@@ -130,6 +145,7 @@ const App: React.FC = () => {
             profile={profile}
             onAddItem={() => setView('scan')}
             onDeleteItem={deleteItem}
+            onEditItem={handleEditItem}
             onViewLegal={() => setView('legal')}
             onEditProfile={() => setView('setup')}
             onGoToStore={() => setView('storefront')}
@@ -142,7 +158,7 @@ const App: React.FC = () => {
           <Scanner 
             onCancel={() => setView('dashboard')}
             onAnalysisComplete={(front, back, result, type) => {
-              setTempAnalysis({ front, back, result, type });
+              setEditingContext({ front, back, result, type });
               setView('details');
             }} 
           />
@@ -150,13 +166,14 @@ const App: React.FC = () => {
 
       case 'details':
         if (!isAuthenticated) return <div onClick={() => setView('login')}>Unauthorized</div>;
-        return tempAnalysis ? (
+        return editingContext ? (
           <AnalysisView
-            frontImage={tempAnalysis.front}
-            backImage={tempAnalysis.back}
-            analysis={tempAnalysis.result}
-            type={tempAnalysis.type}
-            onSave={addItem}
+            initialItem={editingContext.item}
+            frontImage={editingContext.front}
+            backImage={editingContext.back}
+            analysis={editingContext.result}
+            type={editingContext.type}
+            onSave={saveItem}
             onCancel={() => setView('dashboard')}
           />
         ) : <div>Error: No analysis data</div>;

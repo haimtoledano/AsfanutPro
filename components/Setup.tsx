@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { StoreProfile } from '../types';
 import { Settings } from './Icons';
 import { analyzeLogoColor } from '../services/gemini';
+import { APP_CONFIG } from '../config';
 
 interface SetupProps {
   initialProfile: StoreProfile | null;
@@ -18,11 +19,12 @@ const Setup: React.FC<SetupProps> = ({ initialProfile, onSave }) => {
     address: '',
     termsAccepted: false,
     password: '',
-    themeColor: '#2563eb' // Default blue
+    themeColor: APP_CONFIG.defaultThemeColor
   });
   
   const [suggestedColors, setSuggestedColors] = useState<string[]>([]);
   const [isAnalyzingColor, setIsAnalyzingColor] = useState(false);
+  const [useCustomDesign, setUseCustomDesign] = useState(true);
 
   const handleChange = (field: keyof StoreProfile, value: string | boolean) => {
     setProfile(prev => ({ ...prev, [field]: value }));
@@ -54,6 +56,12 @@ const Setup: React.FC<SetupProps> = ({ initialProfile, onSave }) => {
     }
   };
 
+  const resetDesign = () => {
+    setSuggestedColors([]);
+    setProfile(prev => ({ ...prev, themeColor: APP_CONFIG.defaultThemeColor }));
+    setUseCustomDesign(false);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (profile.termsAccepted && profile.password) {
@@ -75,14 +83,23 @@ const Setup: React.FC<SetupProps> = ({ initialProfile, onSave }) => {
         
         {/* Logo and Branding Section */}
         <div className="bg-slate-50 p-6 rounded-xl border border-slate-200">
-          <h3 className="font-bold text-slate-700 mb-4">מיתוג ועיצוב</h3>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="font-bold text-slate-700">מיתוג ועיצוב</h3>
+            <button 
+              type="button" 
+              onClick={resetDesign}
+              className="text-xs text-slate-500 hover:text-slate-800 underline"
+            >
+              אפס לברירת מחדל
+            </button>
+          </div>
           
           <div className="flex flex-col md:flex-row gap-6 items-start">
             {/* Logo Upload */}
             <div className="flex flex-col items-center gap-2">
               <div className="relative w-32 h-32 rounded-full bg-white border-2 border-dashed border-slate-300 flex items-center justify-center overflow-hidden hover:border-blue-500 transition-colors cursor-pointer group shadow-sm">
                 {profile.logoUrl ? (
-                  <img src={profile.logoUrl} alt="Logo" className="w-full h-full object-cover" />
+                  <img src={profile.logoUrl} alt="Logo" className="w-full h-full object-contain p-2" />
                 ) : (
                   <span className="text-sm text-slate-400 text-center px-2">העלה לוגו</span>
                 )}
@@ -103,8 +120,11 @@ const Setup: React.FC<SetupProps> = ({ initialProfile, onSave }) => {
               <div className="flex items-center gap-3 mb-3">
                 <input
                   type="color"
-                  value={profile.themeColor || '#2563eb'}
-                  onChange={(e) => handleChange('themeColor', e.target.value)}
+                  value={profile.themeColor || APP_CONFIG.defaultThemeColor}
+                  onChange={(e) => {
+                    handleChange('themeColor', e.target.value);
+                    setUseCustomDesign(true);
+                  }}
                   className="h-10 w-20 rounded cursor-pointer border border-slate-300"
                 />
                 <span className="text-sm font-mono text-slate-500">{profile.themeColor}</span>
@@ -129,7 +149,10 @@ const Setup: React.FC<SetupProps> = ({ initialProfile, onSave }) => {
                            <button
                              key={color}
                              type="button"
-                             onClick={() => handleChange('themeColor', color)}
+                             onClick={() => {
+                               handleChange('themeColor', color);
+                               setUseCustomDesign(true);
+                             }}
                              className="w-8 h-8 rounded-full border-2 border-white shadow-sm hover:scale-110 transition-transform ring-1 ring-slate-200"
                              style={{ backgroundColor: color }}
                              title={`בחר צבע ${color}`}

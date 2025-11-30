@@ -1,3 +1,4 @@
+
 export interface StoreProfile {
   storeName: string;
   logoUrl: string | null;

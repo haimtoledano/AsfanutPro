@@ -1,7 +1,8 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { Camera, Upload, AlertTriangle } from './Icons';
 import { ItemType, AIAnalysisResult } from '../types';
 import { analyzeCollectibleItem } from '../services/gemini';
+import ImageEditor from './ImageEditor';
 
 interface ScannerProps {
   onAnalysisComplete: (front: string, back: string, analysis: AIAnalysisResult, type: ItemType) => void;
@@ -14,17 +15,33 @@ const Scanner: React.FC<ScannerProps> = ({ onAnalysisComplete, onCancel }) => {
   const [backImage, setBackImage] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Editor State
+  const [editingImage, setEditingImage] = useState<{data: string, side: 'front' | 'back'} | null>(null);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, side: 'front' | 'back') => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        if (side === 'front') setFrontImage(reader.result as string);
-        else setBackImage(reader.result as string);
+        // Instead of setting image directly, open editor
+        setEditingImage({
+          data: reader.result as string,
+          side: side
+        });
       };
       reader.readAsDataURL(file);
     }
+    // Reset input value to allow same file selection again
+    e.target.value = '';
+  };
+
+  const handleEditorSave = (editedData: string) => {
+    if (editingImage) {
+      if (editingImage.side === 'front') setFrontImage(editedData);
+      else setBackImage(editedData);
+    }
+    setEditingImage(null);
   };
 
   const handleAnalyze = async () => {
@@ -49,6 +66,14 @@ const Scanner: React.FC<ScannerProps> = ({ onAnalysisComplete, onCancel }) => {
 
   return (
     <div className="max-w-2xl mx-auto p-4">
+      {editingImage && (
+        <ImageEditor 
+          imageBase64={editingImage.data}
+          onSave={handleEditorSave}
+          onCancel={() => setEditingImage(null)}
+        />
+      )}
+
       <h2 className="text-2xl font-bold text-center mb-6 text-slate-800">הוספת פריט חדש</h2>
       
       {/* Type Selection */}
@@ -75,9 +100,14 @@ const Scanner: React.FC<ScannerProps> = ({ onAnalysisComplete, onCancel }) => {
         ].map((side) => (
           <div key={side.label} className="flex flex-col items-center">
             <span className="mb-2 font-medium text-slate-600">{side.label}</span>
-            <div className={`relative w-full aspect-square bg-slate-100 rounded-xl border-2 border-dashed ${side.value ? 'border-blue-500' : 'border-slate-300'} flex items-center justify-center overflow-hidden`}>
+            <div className={`relative w-full aspect-square bg-slate-50 rounded-xl border-2 border-dashed ${side.value ? 'border-blue-500 bg-white' : 'border-slate-300'} flex items-center justify-center overflow-hidden group`}>
               {side.value ? (
-                <img src={side.value} alt={side.label} className="w-full h-full object-cover" />
+                <>
+                  <img src={side.value} alt={side.label} className="w-full h-full object-contain p-2" />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <span className="text-white font-bold bg-black/50 px-3 py-1 rounded-full text-sm">לחץ לעריכה/החלפה</span>
+                  </div>
+                </>
               ) : (
                 <div className="text-center p-4">
                   <Camera className="w-12 h-12 text-slate-400 mx-auto mb-2" />
@@ -87,11 +117,18 @@ const Scanner: React.FC<ScannerProps> = ({ onAnalysisComplete, onCancel }) => {
               <input 
                 type="file" 
                 accept="image/*"
-                // capture="environment" // Optional: force camera on mobile, but user might want gallery
                 className="absolute inset-0 opacity-0 cursor-pointer"
                 onChange={(e) => handleImageUpload(e, side.setter)}
               />
             </div>
+            {side.value && (
+               <button 
+                 onClick={() => setEditingImage({ data: side.value!, side: side.setter })}
+                 className="mt-2 text-xs text-blue-600 hover:underline"
+               >
+                 ערוך תמונה שוב
+               </button>
+            )}
           </div>
         ))}
       </div>
