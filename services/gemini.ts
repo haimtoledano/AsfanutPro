@@ -1,37 +1,16 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { ItemType, AIAnalysisResult } from "../types";
-import { getProfileFromDB } from "./db";
-
-// Helper to get the API Key. 
-// Logic: Use override if provided -> Use DB if available -> Return empty string.
-// Note: process.env.API_KEY is not available in the client build.
-const getApiKey = async (override?: string): Promise<string> => {
-  if (override && override.trim() !== '') return override;
-
-  try {
-    const profile = await getProfileFromDB();
-    if (profile && profile.apiKey && profile.apiKey.trim() !== '') {
-      return profile.apiKey;
-    }
-  } catch (e) {
-    console.warn("Could not fetch profile for API Key", e);
-  }
-
-  return '';
-};
 
 export const analyzeCollectibleItem = async (
   frontImageBase64: string,
   backImageBase64: string,
-  type: ItemType,
-  overrideApiKey?: string
+  type: ItemType
 ): Promise<AIAnalysisResult> => {
   
-  const apiKey = await getApiKey(overrideApiKey);
+  const apiKey = process.env.API_KEY;
 
   if (!apiKey) {
-    throw new Error("Missing Google API Key. Please configure it in Store Settings.");
+    throw new Error("Missing Google API Key. Ensure process.env.API_KEY is set.");
   }
 
   const prompt = `
@@ -101,8 +80,8 @@ export const analyzeCollectibleItem = async (
   }
 };
 
-export const analyzeLogoColor = async (imageBase64: string, overrideApiKey?: string): Promise<string[]> => {
-  const apiKey = await getApiKey(overrideApiKey);
+export const analyzeLogoColor = async (imageBase64: string): Promise<string[]> => {
+  const apiKey = process.env.API_KEY;
 
   if (!apiKey) {
      console.warn("No API key provided for color analysis");

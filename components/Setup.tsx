@@ -1,7 +1,6 @@
-
 import React, { useState } from 'react';
 import { StoreProfile } from '../types';
-import { Settings, Lock } from './Icons';
+import { Settings } from './Icons';
 import { analyzeLogoColor } from '../services/gemini';
 import { APP_CONFIG } from '../config';
 
@@ -21,8 +20,7 @@ const Setup: React.FC<SetupProps> = ({ initialProfile, onSave, onCancel }) => {
     address: '',
     termsAccepted: false,
     password: '',
-    themeColor: APP_CONFIG.defaultThemeColor,
-    apiKey: ''
+    themeColor: APP_CONFIG.defaultThemeColor
   });
   
   const [suggestedColors, setSuggestedColors] = useState<string[]>([]);
@@ -50,20 +48,13 @@ const Setup: React.FC<SetupProps> = ({ initialProfile, onSave, onCancel }) => {
   const handleAnalyzeColors = async () => {
     if (!profile.logoUrl) return;
     
-    // If user hasn't entered a key yet, warn them
-    if (!profile.apiKey) {
-      alert("אנא הזן מפתח API (Google Gemini API Key) בסעיף ההגדרות למטה כדי להשתמש ב-AI.");
-      return;
-    }
-
     setIsAnalyzingColor(true);
     try {
-      // Pass the current key from state because it might not be saved in DB yet
-      const colors = await analyzeLogoColor(profile.logoUrl, profile.apiKey);
+      const colors = await analyzeLogoColor(profile.logoUrl);
       setSuggestedColors(colors);
     } catch (e) {
       console.error(e);
-      alert("שגיאה בניתוח הצבעים. וודא שמפתח ה-API תקין.");
+      alert("שגיאה בניתוח הצבעים.");
     } finally {
       setIsAnalyzingColor(false);
     }
@@ -77,7 +68,7 @@ const Setup: React.FC<SetupProps> = ({ initialProfile, onSave, onCancel }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (profile.termsAccepted && profile.password && profile.apiKey) {
+    if (profile.termsAccepted && profile.password) {
       setIsSaving(true);
       try {
         await onSave(profile);
@@ -101,31 +92,6 @@ const Setup: React.FC<SetupProps> = ({ initialProfile, onSave, onCancel }) => {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         
-        {/* API Key Configuration - High Priority */}
-        <div className="bg-slate-900 text-white p-6 rounded-xl border border-slate-800 shadow-md">
-          <div className="flex items-center gap-2 mb-4 text-amber-400">
-             <Lock className="w-5 h-5" />
-             <h3 className="font-bold">הגדרות חיבור ל-AI (חובה)</h3>
-          </div>
-          <div className="mb-2">
-            <label className="block text-sm font-medium text-slate-300 mb-1">Google Gemini API Key</label>
-            <input
-              type="password"
-              required
-              value={profile.apiKey || ''}
-              onChange={(e) => handleChange('apiKey', e.target.value)}
-              className="w-full p-3 rounded-lg border border-slate-700 bg-slate-800 text-white focus:ring-2 focus:ring-amber-500 focus:border-transparent font-mono text-sm"
-              placeholder="AIzaSy..."
-            />
-            <p className="text-xs text-slate-400 mt-2">
-              המערכת דורשת מפתח API פעיל כדי לבצע זיהוי תמונות והערכת שווי.
-              <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-amber-400 hover:underline mr-1">
-                 לחץ כאן להנפקת מפתח בחינם.
-              </a>
-            </p>
-          </div>
-        </div>
-
         {/* Logo and Branding Section */}
         <div className="bg-slate-50 p-6 rounded-xl border border-slate-200">
           <div className="flex justify-between items-center mb-4">
@@ -314,9 +280,9 @@ const Setup: React.FC<SetupProps> = ({ initialProfile, onSave, onCancel }) => {
           
           <button
             type="submit"
-            disabled={!profile.termsAccepted || !profile.password || !profile.apiKey || isSaving}
-            className={`flex-1 py-3 rounded-xl font-bold text-lg shadow transition-colors flex items-center justify-center gap-2 ${profile.termsAccepted && profile.password && profile.apiKey && !isSaving ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-slate-300 text-slate-500 cursor-not-allowed'}`}
-            style={profile.termsAccepted && profile.password && profile.apiKey && profile.themeColor && !isSaving ? { backgroundColor: profile.themeColor } : {}}
+            disabled={!profile.termsAccepted || !profile.password || isSaving}
+            className={`flex-1 py-3 rounded-xl font-bold text-lg shadow transition-colors flex items-center justify-center gap-2 ${profile.termsAccepted && profile.password && !isSaving ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-slate-300 text-slate-500 cursor-not-allowed'}`}
+            style={profile.termsAccepted && profile.password && profile.themeColor && !isSaving ? { backgroundColor: profile.themeColor } : {}}
           >
             {isSaving ? (
               <>

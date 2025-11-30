@@ -1,4 +1,3 @@
-
 export interface StoreProfile {
   storeName: string;
   logoUrl: string | null;
@@ -9,7 +8,6 @@ export interface StoreProfile {
   termsAccepted: boolean;
   password?: string;
   themeColor?: string;
-  apiKey?: string; // Google Gemini API Key
 }
 
 export enum ItemType {

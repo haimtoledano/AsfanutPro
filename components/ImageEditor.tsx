@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { ZoomIn, RotateCw, Wand2, Check, X, Crop } from './Icons';
 
@@ -23,8 +24,26 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageBase64, onSave, onCancel
     img.src = imageBase64;
     img.onload = () => {
       setImageObj(img);
-      // Center image initially
       setPosition({ x: 0, y: 0 });
+      
+      // Auto-fit logic for large images (Mobile support)
+      const canvasSize = 600; // Matches the width/height props of the canvas element
+      
+      // Calculate the scale needed to fit the image entirely within the canvas with padding
+      const scaleX = canvasSize / img.width;
+      const scaleY = canvasSize / img.height;
+      const fitScale = Math.min(scaleX, scaleY) * 0.9; // 90% fill to leave margins
+      
+      // If the image is larger than the canvas or fits awkwardly, use the fitScale.
+      // Otherwise, default to 1 (actual size) if it fits well.
+      // For consistency, we mostly want "fit to screen" initial view.
+      if (img.width > canvasSize || img.height > canvasSize) {
+        setScale(fitScale);
+      } else {
+        // Even for smaller images, centering them nicely is often better than 100% scale if they are tiny
+        // But usually, we just default to 1 for small images.
+        setScale(1);
+      }
     };
   }, [imageBase64]);
 
@@ -108,7 +127,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageBase64, onSave, onCancel
   const autoEnhance = () => {
     setBrightness(110);
     setContrast(115);
-    setScale(prev => prev * 1.05); // Slight zoom to crop edges
+    // Don't auto-zoom too much, maybe just a tiny bit or keep current scale
   };
 
   return (
@@ -145,9 +164,9 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageBase64, onSave, onCancel
             <span className="text-sm font-bold w-16 text-slate-600">זום:</span>
             <input 
               type="range" 
-              min="0.5" 
-              max="3" 
-              step="0.1" 
+              min="0.1" 
+              max="5" 
+              step="0.05" 
               value={scale}
               onChange={(e) => setScale(parseFloat(e.target.value))}
               className="flex-1 accent-blue-600"
