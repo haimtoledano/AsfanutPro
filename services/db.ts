@@ -100,33 +100,54 @@ const browserStorage = {
   }
 };
 
-// --- Server Storage (API/SQLite) Implementation Mock ---
+// --- Server Storage (API/SQLite) Implementation ---
 
 const serverStorage = {
   saveProfile: async (profile: StoreProfile) => {
-    // Example: await fetch(`${APP_CONFIG.apiBaseUrl}/profile`, { method: 'POST', body: JSON.stringify(profile) ... });
-    console.log("Saving profile to server...", profile);
-    return Promise.resolve(); 
+    const response = await fetch(`${APP_CONFIG.apiBaseUrl}/profile`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(profile)
+    });
+    if (!response.ok) throw new Error(`Server error: ${response.statusText}`);
   },
 
   getProfile: async (): Promise<StoreProfile | null> => {
-    console.log("Fetching profile from server...");
-    return Promise.resolve(null);
+    try {
+      const response = await fetch(`${APP_CONFIG.apiBaseUrl}/profile`);
+      if (!response.ok) return null;
+      return await response.json();
+    } catch (e) {
+      console.error("Failed to fetch profile from server", e);
+      return null;
+    }
   },
 
   saveItem: async (item: CollectibleItem) => {
-    console.log("Saving item to server...", item);
-    return Promise.resolve();
+    const response = await fetch(`${APP_CONFIG.apiBaseUrl}/items`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(item)
+    });
+    if (!response.ok) throw new Error(`Server error: ${response.statusText}`);
   },
 
   getItems: async (): Promise<CollectibleItem[]> => {
-    console.log("Fetching items from server...");
-    return Promise.resolve([]);
+    try {
+      const response = await fetch(`${APP_CONFIG.apiBaseUrl}/items`);
+      if (!response.ok) return [];
+      return await response.json();
+    } catch (e) {
+      console.error("Failed to fetch items from server", e);
+      return [];
+    }
   },
 
   deleteItem: async (id: string) => {
-    console.log("Deleting item from server...", id);
-    return Promise.resolve();
+    const response = await fetch(`${APP_CONFIG.apiBaseUrl}/items/${id}`, {
+      method: 'DELETE'
+    });
+    if (!response.ok) throw new Error(`Server error: ${response.statusText}`);
   }
 };
 
@@ -139,6 +160,6 @@ const getStorage = () => {
 export const saveProfileToDB = (profile: StoreProfile) => getStorage().saveProfile(profile);
 export const getProfileFromDB = () => getStorage().getProfile();
 export const saveItemToDB = (item: CollectibleItem) => getStorage().saveItem(item);
-export const updateItemInDB = (item: CollectibleItem) => getStorage().saveItem(item); // Alias for clarity
+export const updateItemInDB = (item: CollectibleItem) => getStorage().saveItem(item);
 export const getItemsFromDB = () => getStorage().getItems();
 export const deleteItemFromDB = (id: string) => getStorage().deleteItem(id);

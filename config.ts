@@ -1,6 +1,7 @@
+
 export const APP_CONFIG = {
   // Change this to 'SERVER' when you have a backend running with SQLite/Postgres
-  storageType: 'BROWSER' as 'BROWSER' | 'SERVER', 
+  storageType: 'SERVER' as 'BROWSER' | 'SERVER', 
   
   // API Endpoint for the server mode (Relative path for same-origin deployment)
   apiBaseUrl: '/api',
