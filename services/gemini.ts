@@ -1,17 +1,38 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { ItemType, AIAnalysisResult } from "../types";
+import { getProfileFromDB } from "./db";
 
-// Helper to get the AI client, strictly using the environment variable for API Key.
-const getAIClient = () => {
-  // Guidelines: API key must be obtained exclusively from process.env.API_KEY. Assume it is valid.
-  return new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+// Helper to get the API Key. 
+// Logic: Use override if provided -> Use DB if available -> Fallback to process.env
+const getApiKey = async (override?: string): Promise<string> => {
+  if (override && override.trim() !== '') return override;
+
+  try {
+    const profile = await getProfileFromDB();
+    if (profile && profile.apiKey && profile.apiKey.trim() !== '') {
+      return profile.apiKey;
+    }
+  } catch (e) {
+    console.warn("Could not fetch profile for API Key", e);
+  }
+
+  return process.env.API_KEY || '';
 };
 
 export const analyzeCollectibleItem = async (
   frontImageBase64: string,
   backImageBase64: string,
-  type: ItemType
+  type: ItemType,
+  overrideApiKey?: string
 ): Promise<AIAnalysisResult> => {
+  
+  const apiKey = await getApiKey(overrideApiKey);
+
+  if (!apiKey) {
+    throw new Error("Missing Google API Key. Please configure it in Store Settings.");
+  }
+
   const prompt = `
     You are an expert numismatist and philatelist. 
     Analyze these two images (front and back) of a ${type === ItemType.COIN ? 'coin' : 'stamp'}.
@@ -24,7 +45,7 @@ export const analyzeCollectibleItem = async (
   `;
 
   try {
-    const ai = getAIClient();
+    const ai = new GoogleGenAI({ apiKey });
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
       contents: {
@@ -79,7 +100,14 @@ export const analyzeCollectibleItem = async (
   }
 };
 
-export const analyzeLogoColor = async (imageBase64: string): Promise<string[]> => {
+export const analyzeLogoColor = async (imageBase64: string, overrideApiKey?: string): Promise<string[]> => {
+  const apiKey = await getApiKey(overrideApiKey);
+
+  if (!apiKey) {
+     console.warn("No API key provided for color analysis");
+     return ["#2563eb", "#0f172a", "#475569"];
+  }
+
   const prompt = `
     Analyze this logo image. 
     Identify the most dominant and aesthetically pleasing colors that would work well as a primary brand color for a website button or header.
@@ -87,7 +115,7 @@ export const analyzeLogoColor = async (imageBase64: string): Promise<string[]> =
   `;
 
   try {
-    const ai = getAIClient();
+    const ai = new GoogleGenAI({ apiKey });
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
       contents: {

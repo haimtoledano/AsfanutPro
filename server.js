@@ -1,3 +1,4 @@
+import 'dotenv/config'; // Load .env file
 import express from 'express';
 import { createRequire } from 'module';
 import cors from 'cors';
