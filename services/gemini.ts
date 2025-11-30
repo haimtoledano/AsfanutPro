@@ -1,13 +1,16 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { ItemType, AIAnalysisResult } from "../types";
 
-// Lazy initialization to prevent crash on load if env is missing
+// Helper to get the AI client, strictly using the environment variable for API Key.
 const getAIClient = () => {
   const apiKey = process.env.API_KEY;
+  
   if (!apiKey) {
-    console.warn("API Key is missing from process.env");
+    console.error("API Key is missing! process.env.API_KEY must be set.");
+    // We throw to prevent initializing with undefined, which would fail inside the SDK or API calls.
+    throw new Error("API Key is missing. Please set process.env.API_KEY.");
   }
-  return new GoogleGenAI({ apiKey: apiKey || 'DUMMY_KEY_FOR_Safety' });
+  return new GoogleGenAI({ apiKey });
 };
 
 export const analyzeCollectibleItem = async (
