@@ -1,9 +1,18 @@
 
-const express = require('express');
+import express from 'express';
+import { createRequire } from 'module';
+import cors from 'cors';
+import bodyParser from 'body-parser';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Initialize require for CommonJS modules (like sqlite3)
+const require = createRequire(import.meta.url);
 const sqlite3 = require('sqlite3').verbose();
-const cors = require('cors');
-const bodyParser = require('body-parser');
-const path = require('path');
+
+// Recreate __dirname for ES Modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -108,7 +117,6 @@ app.delete('/api/items/:id', (req, res) => {
 });
 
 // Serve Static Files (Frontend)
-// Assuming the frontend files (index.html, JS) are in the same directory or 'dist'
 app.use(express.static(__dirname));
 
 // Fallback for SPA routing - send index.html for unknown non-API routes
