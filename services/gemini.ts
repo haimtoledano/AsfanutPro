@@ -3,14 +3,8 @@ import { ItemType, AIAnalysisResult } from "../types";
 
 // Helper to get the AI client, strictly using the environment variable for API Key.
 const getAIClient = () => {
-  const apiKey = process.env.API_KEY;
-  
-  if (!apiKey) {
-    console.error("API Key is missing! process.env.API_KEY must be set.");
-    // We throw to prevent initializing with undefined, which would fail inside the SDK or API calls.
-    throw new Error("API Key is missing. Please set process.env.API_KEY.");
-  }
-  return new GoogleGenAI({ apiKey });
+  // Guidelines: API key must be obtained exclusively from process.env.API_KEY. Assume it is valid.
+  return new GoogleGenAI({ apiKey: process.env.API_KEY as string });
 };
 
 export const analyzeCollectibleItem = async (

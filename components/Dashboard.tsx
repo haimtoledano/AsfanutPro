@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { CollectibleItem, StoreProfile, ItemType, ItemStatus } from '../types';
-import { Plus, Scale, Edit, Search, Filter, Tag } from './Icons';
+import { Plus, Scale, Edit, Search, Filter, Tag, BarChart, Download } from './Icons';
 import { updateItemInDB } from '../services/db';
 
 interface DashboardProps {
@@ -29,6 +29,15 @@ const Dashboard: React.FC<DashboardProps> = ({
   const [typeFilter, setTypeFilter] = useState<ItemType | 'ALL'>('ALL');
   const [statusFilter, setStatusFilter] = useState<ItemStatus | 'ALL'>('ALL');
 
+  // Statistics Calculation
+  const totalItems = items.length;
+  const soldItems = items.filter(i => i.status === 'SOLD').length;
+  const availableItems = totalItems - soldItems;
+  const totalValue = items.reduce((acc, item) => {
+    const price = parseFloat(item.userPrice) || 0;
+    return acc + price;
+  }, 0);
+
   const filteredItems = items.filter(item => {
     const matchesSearch = 
       item.analysis?.itemName.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -37,7 +46,6 @@ const Dashboard: React.FC<DashboardProps> = ({
     
     const matchesType = typeFilter === 'ALL' || item.type === typeFilter;
     
-    // Handle items without status (legacy) by defaulting to AVAILABLE
     const itemStatus = item.status || 'AVAILABLE';
     const matchesStatus = statusFilter === 'ALL' || itemStatus === statusFilter;
 
@@ -47,38 +55,54 @@ const Dashboard: React.FC<DashboardProps> = ({
   const toggleStatus = async (item: CollectibleItem) => {
     const newStatus = (!item.status || item.status === 'AVAILABLE') ? 'SOLD' : 'AVAILABLE';
     const updatedItem = { ...item, status: newStatus };
-    // We update specifically in DB, then the parent app usually reloads, 
-    // but for immediate UI feedback we might need a prop to trigger refresh or just rely on parent
-    // Here we'll just update via DB and let App.tsx flow handle it if it re-fetches, 
-    // BUT since Dashboard doesn't control `setItems`, we should ideally pass this up.
-    // However, to keep it simple, we use the `onEditItem` flow or just call DB + force reload in App.
-    // Better UX: Reuse onEditItem but just for this field? 
-    // Let's assume we can modify it and call a refresh. 
-    // Since we don't have onUpdateItem prop, we can abuse onEditItem to trigger a save or add a specialized handler.
-    // For now, I'll direct update via imported DB service and then reload window or assume app refreshes? 
-    // No, React needs state update.
-    // Let's use `onEditItem` which triggers `saveItem` in App.tsx eventually if we went through the form.
-    // Best quick fix: We will trigger onEditItem but that opens the form. 
-    // I'll assume the user uses the Edit form to change status for now OR implement a direct method if passed.
-    // Wait, the prompt asked for "Mark as Sold" functionality. I'll add the button that effectively updates it.
-    // I will call `updateItemInDB` directly and then I really should notify the parent to reload.
-    // Since I can't easily notify parent without changing App.tsx props, I will rely on the "Edit" form to change status 
-    // OR just modify the App to accept an update callback. 
-    // Let's modify the local state for immediate feedback but really we should use the Edit Form for full control.
-    // ACTUALLY, I'll add a quick toggle button that uses onEditItem flow but maybe too complex to route.
-    // Let's stick to: Open Edit -> Change Status -> Save.
-    // BUT user wants a "Sold" management. I'll add a quick toggle visual that opens edit with "Sold" pre-selected?
-    // No, I'll add a direct toggle button and reload the page? Crude but works. 
-    // Better: I'll accept that the user edits it inside the edit view (AnalysisView).
-    // ALTERNATIVELY, I'll add a "Quick Toggle" button and I'll invoke the DB update. 
-    // To make the UI update, I'll cheat slightly and force a reload or use the Edit flow.
-    // Let's add the status toggle inside the card which updates DB. To refresh UI, we can reload.
-    // A better React pattern is passing a refresh callback. I'll stick to the Edit View changes for now as primary,
-    // but adds a visual indicator here.
-    
-    // Actually, I'll implement the toggle here and reload.
     await updateItemInDB(updatedItem as any);
-    window.location.reload(); // Simple refresh to fetch new data
+    window.location.reload(); 
+  };
+
+  const handleExportCSV = () => {
+    // Define headers
+    const headers = [
+      'מזהה', 
+      'שם הפריט', 
+      'סוג', 
+      'מצב', 
+      'שנה', 
+      'מקור', 
+      'מחיר', 
+      'סטטוס', 
+      'תיאור'
+    ];
+
+    // Map items to rows
+    const rows = items.map(item => [
+      item.id,
+      `"${item.analysis?.itemName.replace(/"/g, '""')}"`,
+      item.type,
+      item.analysis?.conditionGrade,
+      item.analysis?.year,
+      item.analysis?.origin,
+      item.userPrice,
+      item.status === 'SOLD' ? 'נמכר' : 'זמין',
+      `"${item.analysis?.description.replace(/"/g, '""')}"`
+    ]);
+
+    // Combine headers and rows
+    const csvContent = [
+      headers.join(','), 
+      ...rows.map(row => row.join(','))
+    ].join('\n');
+
+    // Add BOM for Excel Hebrew support
+    const blob = new Blob(["\ufeff" + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    
+    // Create download link
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `inventory_${new Date().toISOString().slice(0,10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
@@ -129,6 +153,37 @@ const Dashboard: React.FC<DashboardProps> = ({
         </div>
       </div>
 
+      {/* Statistics Bar */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex items-center gap-4">
+          <div className="p-3 bg-blue-50 text-blue-600 rounded-full">
+            <Scale className="w-6 h-6" />
+          </div>
+          <div>
+            <p className="text-xs text-slate-500 font-medium">סה"כ פריטים</p>
+            <p className="text-2xl font-bold text-slate-800">{totalItems}</p>
+          </div>
+        </div>
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex items-center gap-4">
+          <div className="p-3 bg-green-50 text-green-600 rounded-full">
+            <BarChart className="w-6 h-6" />
+          </div>
+          <div>
+            <p className="text-xs text-slate-500 font-medium">פריטים שנמכרו</p>
+            <p className="text-2xl font-bold text-slate-800">{soldItems} <span className="text-xs text-slate-400 font-normal">/ {availableItems} זמינים</span></p>
+          </div>
+        </div>
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex items-center gap-4">
+          <div className="p-3 bg-amber-50 text-amber-600 rounded-full">
+            <Tag className="w-6 h-6" />
+          </div>
+          <div>
+            <p className="text-xs text-slate-500 font-medium">שווי מלאי כולל</p>
+            <p className="text-2xl font-bold text-slate-800">{totalValue.toLocaleString()} ₪</p>
+          </div>
+        </div>
+      </div>
+
       {/* Filters & Search */}
       <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 mb-8 flex flex-col md:flex-row gap-4 items-center justify-between">
         <div className="relative w-full md:w-96">
@@ -142,7 +197,7 @@ const Dashboard: React.FC<DashboardProps> = ({
           />
         </div>
         
-        <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
+        <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-2 md:pb-0 items-center">
           <div className="flex items-center gap-2 bg-slate-50 px-3 py-2 rounded-lg border border-slate-200">
             <Filter className="w-4 h-4 text-slate-500" />
             <select 
@@ -168,6 +223,15 @@ const Dashboard: React.FC<DashboardProps> = ({
               <option value="SOLD">נמכר</option>
             </select>
           </div>
+
+          <button 
+            onClick={handleExportCSV}
+            className="flex items-center gap-2 px-4 py-2 text-sm bg-slate-800 text-white rounded-lg hover:bg-slate-900 transition-colors shadow-sm whitespace-nowrap"
+            title="הורד דוח מלאי לאקסל"
+          >
+            <Download className="w-4 h-4" />
+            ייצוא
+          </button>
         </div>
       </div>
 
