@@ -223,9 +223,13 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 pb-12">
       {!isSecure && (
-        <div className="bg-red-600 text-white p-2 text-center text-sm font-bold flex items-center justify-center gap-2">
-           <AlertTriangle className="w-4 h-4" />
-           שים לב: האתר לא מאובטח (HTTP). המצלמה לא תעבוד. אנא עבור ל-HTTPS או Localhost.
+        <div className="bg-red-600 text-white p-3 text-center font-bold flex flex-col md:flex-row items-center justify-center gap-2 shadow-lg">
+           <AlertTriangle className="w-5 h-5" />
+           <span>
+             שים לב: האתר לא מאובטח (HTTP). המצלמה והמיקרופון לא יעבדו בדומיין csgallery.co.il.
+             <br className="md:hidden"/>
+             אנא התקן תעודת SSL או גלוש דרך HTTPS.
+           </span>
         </div>
       )}
       {renderView()}
