@@ -52,14 +52,16 @@ const App: React.FC = () => {
         if (savedProfile) {
           setProfile(savedProfile);
           
-          // If profile exists but no password (legacy), force setup to add password
+          // If profile exists, ALWAYS go to storefront by default for public users
+          // The setup page is only for initial creation or explicit admin edit
+          setView('storefront');
+          
+          // Legacy check: If profile exists but no password, force setup to add password
           if (!savedProfile.password) {
             setView('setup');
-          } else {
-            // Default to storefront for public visitors
-            setView('storefront');
-          }
+          } 
         } else {
+          // No profile, go to initial setup
           setView('setup');
         }
       } catch (error) {
@@ -127,7 +129,29 @@ const App: React.FC = () => {
   const renderView = () => {
     switch (view) {
       case 'setup':
-        return <Setup initialProfile={profile} onSave={saveProfile} />;
+        // If a profile exists but user is not authenticated, do not show setup.
+        // Redirect to login or show login component.
+        if (profile && !isAuthenticated) {
+          return (
+            <Login 
+              profile={profile} 
+              onLoginSuccess={() => {
+                setIsAuthenticated(true);
+                // Stay on setup if that was the intent, or go to dashboard?
+                // Usually user comes here from Dashboard -> Settings, so they would be auth'd.
+                // If they typed URL/forced state, we let them proceed to setup after login.
+              }}
+              onBack={() => setView('storefront')}
+            />
+          );
+        }
+        return (
+          <Setup 
+            initialProfile={profile} 
+            onSave={saveProfile} 
+            onCancel={profile ? () => setView('dashboard') : undefined} 
+          />
+        );
       
       case 'login':
         return profile ? (

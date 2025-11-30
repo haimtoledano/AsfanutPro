@@ -7,9 +7,10 @@ import { APP_CONFIG } from '../config';
 interface SetupProps {
   initialProfile: StoreProfile | null;
   onSave: (profile: StoreProfile) => void;
+  onCancel?: () => void;
 }
 
-const Setup: React.FC<SetupProps> = ({ initialProfile, onSave }) => {
+const Setup: React.FC<SetupProps> = ({ initialProfile, onSave, onCancel }) => {
   const [profile, setProfile] = useState<StoreProfile>(initialProfile || {
     storeName: '',
     logoUrl: null,
@@ -75,7 +76,9 @@ const Setup: React.FC<SetupProps> = ({ initialProfile, onSave }) => {
         <div className="inline-block p-3 bg-blue-50 rounded-full mb-4">
           <Settings className="w-8 h-8 text-blue-600" />
         </div>
-        <h1 className="text-3xl font-bold text-slate-800">הגדרת חנות</h1>
+        <h1 className="text-3xl font-bold text-slate-800">
+          {initialProfile ? 'עדכון פרטי חנות' : 'הגדרת חנות'}
+        </h1>
         <p className="text-slate-500 mt-2">הזן את פרטי העסק שלך כדי להתחיל להשתמש במערכת</p>
       </div>
 
@@ -255,14 +258,26 @@ const Setup: React.FC<SetupProps> = ({ initialProfile, onSave }) => {
           </label>
         </div>
 
-        <button
-          type="submit"
-          disabled={!profile.termsAccepted || !profile.password}
-          className={`w-full py-3 rounded-xl font-bold text-lg shadow transition-colors ${profile.termsAccepted && profile.password ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-slate-300 text-slate-500 cursor-not-allowed'}`}
-          style={profile.termsAccepted && profile.password && profile.themeColor ? { backgroundColor: profile.themeColor } : {}}
-        >
-          {initialProfile ? 'עדכן פרטים' : 'צור חנות'}
-        </button>
+        <div className="flex gap-4">
+          {onCancel && (
+            <button
+              type="button"
+              onClick={onCancel}
+              className="flex-1 py-3 rounded-xl font-bold text-lg border border-slate-300 text-slate-600 hover:bg-slate-50 transition-colors"
+            >
+              ביטול
+            </button>
+          )}
+          
+          <button
+            type="submit"
+            disabled={!profile.termsAccepted || !profile.password}
+            className={`flex-1 py-3 rounded-xl font-bold text-lg shadow transition-colors ${profile.termsAccepted && profile.password ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-slate-300 text-slate-500 cursor-not-allowed'}`}
+            style={profile.termsAccepted && profile.password && profile.themeColor ? { backgroundColor: profile.themeColor } : {}}
+          >
+            {initialProfile ? 'עדכן פרטים' : 'צור חנות'}
+          </button>
+        </div>
       </form>
     </div>
   );
