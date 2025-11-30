@@ -1,6 +1,7 @@
-import React from 'react';
-import { CollectibleItem, StoreProfile } from '../types';
-import { Scale, Lock } from './Icons';
+
+import React, { useState } from 'react';
+import { CollectibleItem, StoreProfile, ItemType } from '../types';
+import { Scale, Lock, Search, Filter } from './Icons';
 
 interface StorefrontProps {
   items: CollectibleItem[];
@@ -16,6 +17,26 @@ const Storefront: React.FC<StorefrontProps> = ({
   onAdminLogin
 }) => {
   const brandColor = profile.themeColor || '#2563eb';
+  const [searchTerm, setSearchTerm] = useState('');
+  const [typeFilter, setTypeFilter] = useState<ItemType | 'ALL'>('ALL');
+
+  const filteredItems = items.filter(item => {
+    const matchesSearch = 
+      item.analysis?.itemName.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      item.analysis?.year.includes(searchTerm) ||
+      item.analysis?.origin.includes(searchTerm);
+    
+    const matchesType = typeFilter === 'ALL' || item.type === typeFilter;
+    
+    return matchesSearch && matchesType;
+  });
+
+  // Sort: Available first, then Sold
+  filteredItems.sort((a, b) => {
+    if (a.status === 'SOLD' && b.status !== 'SOLD') return 1;
+    if (a.status !== 'SOLD' && b.status === 'SOLD') return -1;
+    return 0;
+  });
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -62,34 +83,66 @@ const Storefront: React.FC<StorefrontProps> = ({
 
       {/* Gallery Grid */}
       <div className="container mx-auto px-4 py-12 max-w-6xl">
-        <h2 className="text-2xl font-bold text-slate-800 mb-8 border-r-4 pr-3 flex items-center gap-2" style={{ borderColor: brandColor }}>
-          פריטים למכירה
-          <span className="text-sm font-normal text-slate-400 px-2 bg-slate-100 rounded-full">{items.length}</span>
-        </h2>
+        <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+          <h2 className="text-2xl font-bold text-slate-800 border-r-4 pr-3 flex items-center gap-2" style={{ borderColor: brandColor }}>
+            פריטים למכירה
+            <span className="text-sm font-normal text-slate-400 px-2 bg-slate-100 rounded-full">{filteredItems.length}</span>
+          </h2>
+
+          <div className="flex gap-4 w-full md:w-auto">
+             <div className="relative flex-1 md:w-64">
+                <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                <input 
+                  type="text" 
+                  placeholder="חיפוש..." 
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pr-9 pl-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                />
+             </div>
+             <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-slate-200">
+                <Filter className="w-4 h-4 text-slate-500" />
+                <select 
+                  value={typeFilter} 
+                  onChange={(e) => setTypeFilter(e.target.value as any)}
+                  className="bg-transparent text-sm font-medium text-slate-700 outline-none cursor-pointer"
+                >
+                  <option value="ALL">הכל</option>
+                  <option value={ItemType.COIN}>מטבעות</option>
+                  <option value={ItemType.STAMP}>בולים</option>
+                </select>
+             </div>
+          </div>
+        </div>
         
-        {items.length === 0 ? (
+        {filteredItems.length === 0 ? (
           <div className="text-center py-20 bg-white rounded-2xl border border-slate-200 shadow-sm">
             <Scale className="w-16 h-16 mx-auto text-slate-300 mb-4" />
-            <h3 className="text-xl font-medium text-slate-600">החנות מתעדכנת ברגעים אלו</h3>
-            <p className="text-slate-400">אנא חיזרו מאוחר יותר לצפייה בפריטים חדשים</p>
+            <h3 className="text-xl font-medium text-slate-600">לא נמצאו פריטים</h3>
+            <p className="text-slate-400">נסה לשנות את החיפוש או חזור מאוחר יותר</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {items.map((item) => (
+            {filteredItems.map((item) => (
               <div 
                 key={item.id} 
                 onClick={() => onViewProduct(item)}
-                className="group bg-white rounded-2xl shadow-sm hover:shadow-xl border border-slate-200 overflow-hidden transition-all duration-300 cursor-pointer transform hover:-translate-y-1"
+                className={`group bg-white rounded-2xl shadow-sm hover:shadow-xl border border-slate-200 overflow-hidden transition-all duration-300 cursor-pointer transform hover:-translate-y-1 ${item.status === 'SOLD' ? 'grayscale opacity-90' : ''}`}
               >
                 <div className="relative h-64 bg-slate-50 p-4 flex items-center justify-center overflow-hidden border-b border-slate-100">
                    <img 
                     src={item.frontImage} 
-                    className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-110" 
+                    className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-110 mix-blend-multiply" 
                     alt="Collectible Front" 
                    />
-                   <div className="absolute top-3 right-3 bg-white/90 backdrop-blur text-slate-800 text-xs font-bold px-3 py-1 rounded-full shadow-sm border border-slate-100">
+                   <div className="absolute top-3 right-3 bg-white/90 backdrop-blur text-slate-800 text-xs font-bold px-3 py-1 rounded-full shadow-sm border border-slate-100 z-10">
                      {item.type}
                    </div>
+                   {item.status === 'SOLD' && (
+                     <div className="absolute inset-0 bg-slate-900/40 flex items-center justify-center z-20 backdrop-blur-[1px]">
+                       <span className="bg-red-600 text-white px-6 py-2 font-bold text-xl rotate-[-12deg] shadow-xl border-4 border-white tracking-wider">נמכר</span>
+                     </div>
+                   )}
                 </div>
                 
                 <div className="p-6">
@@ -103,10 +156,12 @@ const Storefront: React.FC<StorefrontProps> = ({
                   <div className="flex justify-between items-end border-t border-slate-100 pt-4">
                      <div className="flex flex-col">
                        <span className="text-xs text-slate-400 mb-1">מחיר מבוקש</span>
-                       <span className="text-2xl font-bold" style={{ color: brandColor }}>{item.userPrice} ₪</span>
+                       <span className={`text-2xl font-bold ${item.status === 'SOLD' ? 'line-through text-slate-400' : ''}`} style={item.status !== 'SOLD' ? { color: brandColor } : {}}>
+                         {item.userPrice} ₪
+                       </span>
                      </div>
                      <span className="text-sm font-medium hover:underline" style={{ color: brandColor }}>
-                       צפה בפרטים &larr;
+                       {item.status === 'SOLD' ? 'צפה בפריט' : 'לפרטים ורכישה \u2190'}
                      </span>
                   </div>
                 </div>

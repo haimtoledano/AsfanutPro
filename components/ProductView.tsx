@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { CollectibleItem, StoreProfile } from '../types';
-import { AlertTriangle, ZoomIn, X } from './Icons';
+import { AlertTriangle, ZoomIn, X, Share2, DollarSign } from './Icons';
 
 interface ProductViewProps {
   item: CollectibleItem;
@@ -13,11 +13,30 @@ const ProductView: React.FC<ProductViewProps> = ({ item, profile, onBack }) => {
   const brandColor = profile.themeColor || '#2563eb';
   const [zoomImage, setZoomImage] = useState<string | null>(null);
 
+  const isSold = item.status === 'SOLD';
+
   const handleContact = () => {
     // Construct email subject and body
     const subject = `התעניינות בפריט: ${item.analysis?.itemName}`;
     const body = `שלום ${profile.ownerName},%0D%0A%0D%0Aאני מעוניין בפריט "${item.analysis?.itemName}" (שנה: ${item.analysis?.year}) שראיתי באתר שלך במחיר ${item.userPrice} ש"ח.%0D%0A%0D%0Aאשמח לתאם בדיקה ורכישה.%0D%0A%0D%0Aתודה.`;
     window.location.href = `mailto:${profile.email}?subject=${subject}&body=${body}`;
+  };
+
+  const handleMakeOffer = () => {
+    const subject = `הצעת מחיר עבור: ${item.analysis?.itemName}`;
+    const body = `שלום ${profile.ownerName},%0D%0A%0D%0Aאני מעוניין להציע מחיר אחר עבור הפריט "${item.analysis?.itemName}" (מחיר מבוקש: ${item.userPrice} ש"ח).%0D%0A%0D%0Aההצעה שלי היא: [הכנס מחיר כאן] ש"ח.%0D%0A%0D%0Aאשמח לשמוע ממך.%0D%0Aתודה.`;
+    window.location.href = `mailto:${profile.email}?subject=${subject}&body=${body}`;
+  };
+
+  const handleShare = (platform: 'whatsapp' | 'facebook') => {
+    const url = window.location.href; // In a real app this would be a permalink
+    const text = `תראו את הפריט המדהים הזה: ${item.analysis?.itemName} במחיר ${item.userPrice} ש"ח!`;
+    
+    if (platform === 'whatsapp') {
+      window.open(`https://wa.me/?text=${encodeURIComponent(text + ' ' + url)}`, '_blank');
+    } else {
+      window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
+    }
   };
 
   return (
@@ -56,7 +75,15 @@ const ProductView: React.FC<ProductViewProps> = ({ item, profile, onBack }) => {
           &rarr; חזרה לחנות
         </button>
 
-        <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
+        <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden relative">
+          {isSold && (
+            <div className="absolute top-0 left-0 w-full h-full pointer-events-none z-20 overflow-hidden">
+               <div className="absolute top-10 -left-10 bg-red-600 text-white w-40 text-center py-2 font-bold shadow-lg -rotate-45">
+                 נמכר
+               </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2">
             
             {/* Image Gallery */}
@@ -68,7 +95,7 @@ const ProductView: React.FC<ProductViewProps> = ({ item, profile, onBack }) => {
                 <div className="aspect-square flex items-center justify-center overflow-hidden">
                     <img 
                     src={item.frontImage} 
-                    className="max-w-full max-h-full object-contain transition-transform duration-300 group-hover:scale-105" 
+                    className={`max-w-full max-h-full object-contain transition-transform duration-300 group-hover:scale-105 ${isSold ? 'grayscale opacity-80' : ''}`}
                     alt="Front side" 
                     />
                 </div>
@@ -85,7 +112,7 @@ const ProductView: React.FC<ProductViewProps> = ({ item, profile, onBack }) => {
                 <div className="aspect-square flex items-center justify-center overflow-hidden">
                     <img 
                     src={item.backImage} 
-                    className="max-w-full max-h-full object-contain transition-transform duration-300 group-hover:scale-105" 
+                    className={`max-w-full max-h-full object-contain transition-transform duration-300 group-hover:scale-105 ${isSold ? 'grayscale opacity-80' : ''}`}
                     alt="Back side" 
                     />
                 </div>
@@ -103,9 +130,21 @@ const ProductView: React.FC<ProductViewProps> = ({ item, profile, onBack }) => {
 
             {/* Product Details */}
             <div className="p-8 md:p-12 flex flex-col">
-              <div className="flex items-center gap-2 mb-4">
-                <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-bold">{item.type}</span>
-                <span className="px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-sm">{item.analysis?.origin}</span>
+              <div className="flex justify-between items-start">
+                  <div className="flex items-center gap-2 mb-4">
+                    <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-bold">{item.type}</span>
+                    <span className="px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-sm">{item.analysis?.origin}</span>
+                  </div>
+                  
+                  {/* Share Buttons */}
+                  <div className="flex gap-2">
+                     <button onClick={() => handleShare('whatsapp')} className="p-2 bg-green-50 text-green-600 rounded-full hover:bg-green-100 transition" title="שתף בוואטסאפ">
+                        <Share2 className="w-5 h-5" />
+                     </button>
+                     <button onClick={() => handleShare('facebook')} className="p-2 bg-blue-50 text-blue-600 rounded-full hover:bg-blue-100 transition" title="שתף בפייסבוק">
+                        <Share2 className="w-5 h-5" />
+                     </button>
+                  </div>
               </div>
 
               <h1 className="text-3xl md:text-4xl font-bold text-slate-900 mb-2">{item.analysis?.itemName}</h1>
@@ -144,20 +183,39 @@ const ProductView: React.FC<ProductViewProps> = ({ item, profile, onBack }) => {
               <div className="mt-auto pt-8 border-t border-slate-100">
                 <div className="flex items-end justify-between mb-6">
                   <div>
-                    <span className="block text-sm text-slate-500 mb-1">מחיר למכירה:</span>
-                    <span className="text-4xl font-black" style={{ color: brandColor }}>{item.userPrice} ₪</span>
+                    <span className="block text-sm text-slate-500 mb-1">{isSold ? 'נמכר במחיר:' : 'מחיר למכירה:'}</span>
+                    <span className={`text-4xl font-black ${isSold ? 'line-through text-slate-300' : ''}`} style={!isSold ? { color: brandColor } : {}}>{item.userPrice} ₪</span>
                   </div>
                 </div>
 
-                <div className="space-y-3">
-                   <button 
-                    onClick={handleContact}
-                    className="w-full py-4 text-white rounded-xl font-bold text-lg hover:opacity-90 shadow-lg transition-all flex items-center justify-center gap-2"
-                    style={{ backgroundColor: brandColor }}
-                   >
-                     צור קשר לרכישה
-                   </button>
-                   <div className="text-center text-sm text-slate-500">
+                <div className="flex flex-col gap-3">
+                   {!isSold && (
+                    <>
+                       <button 
+                        onClick={handleContact}
+                        className="w-full py-4 text-white rounded-xl font-bold text-lg hover:opacity-90 shadow-lg transition-all flex items-center justify-center gap-2"
+                        style={{ backgroundColor: brandColor }}
+                       >
+                         צור קשר לרכישה
+                       </button>
+                       <button 
+                        onClick={handleMakeOffer}
+                        className="w-full py-3 bg-white border-2 text-slate-700 rounded-xl font-bold text-lg hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
+                        style={{ borderColor: brandColor, color: brandColor }}
+                       >
+                         <DollarSign className="w-5 h-5" />
+                         הצע מחיר אחר
+                       </button>
+                    </>
+                   )}
+                   
+                   {isSold && (
+                     <div className="w-full py-4 bg-slate-100 text-slate-500 rounded-xl font-bold text-lg text-center cursor-not-allowed">
+                       הפריט נמכר
+                     </div>
+                   )}
+
+                   <div className="text-center text-sm text-slate-500 mt-2">
                      ניתן לתאם בדיקה בכתובת: <span className="font-medium text-slate-700">{profile.address}</span>
                    </div>
                 </div>

@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { AIAnalysisResult, ItemType, CollectibleItem } from '../types';
-import { RefreshCw, Wand2 } from './Icons';
+import { AIAnalysisResult, ItemType, CollectibleItem, ItemStatus } from '../types';
+import { RefreshCw, Wand2, Tag } from './Icons';
 import { analyzeCollectibleItem } from '../services/gemini';
 
 interface AnalysisViewProps {
@@ -32,6 +32,7 @@ const AnalysisView: React.FC<AnalysisViewProps> = ({
   const [estimatedValueRange, setEstimatedValueRange] = useState(initialAnalysis.estimatedValueRange);
   const [userPrice, setUserPrice] = useState(initialItem?.userPrice || '');
   const [anomalies, setAnomalies] = useState(initialAnalysis.anomalies);
+  const [status, setStatus] = useState<ItemStatus>(initialItem?.status || 'AVAILABLE');
   
   const [isReanalyzing, setIsReanalyzing] = useState(false);
 
@@ -91,6 +92,7 @@ const AnalysisView: React.FC<AnalysisViewProps> = ({
     const newItem: CollectibleItem = {
       id: initialItem ? initialItem.id : generateId(),
       type,
+      status, // Save selected status
       frontImage,
       backImage,
       analysis: updatedAnalysis,
@@ -141,6 +143,21 @@ const AnalysisView: React.FC<AnalysisViewProps> = ({
           {/* Edit Form */}
           <div className="p-6 md:p-8 flex flex-col h-full overflow-y-auto">
             <div className="space-y-4 mb-8">
+              
+              {/* Status Selector */}
+              <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-lg border border-slate-200">
+                 <Tag className="w-5 h-5 text-slate-500" />
+                 <label className="text-sm font-bold text-slate-700">סטטוס מכירה:</label>
+                 <select 
+                   value={status} 
+                   onChange={(e) => setStatus(e.target.value as ItemStatus)}
+                   className="flex-1 bg-white border border-slate-300 rounded p-1 text-sm font-medium"
+                 >
+                   <option value="AVAILABLE">זמין למכירה</option>
+                   <option value="SOLD">נמכר</option>
+                 </select>
+              </div>
+
               <div>
                 <label className="block text-xs font-bold text-slate-500 mb-1">שם הפריט</label>
                 <input 

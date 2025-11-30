@@ -16,6 +16,8 @@ export enum ItemType {
   STAMP = 'בול',
 }
 
+export type ItemStatus = 'AVAILABLE' | 'SOLD';
+
 export interface AIAnalysisResult {
   itemName: string;
   year: string;
@@ -30,6 +32,7 @@ export interface AIAnalysisResult {
 export interface CollectibleItem {
   id: string;
   type: ItemType;
+  status: ItemStatus; // New field for Availability status
   frontImage: string; // Base64
   backImage: string; // Base64
   analysis: AIAnalysisResult | null;
