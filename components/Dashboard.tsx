@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { CollectibleItem, StoreProfile, ItemType, ItemStatus } from '../types';
-import { Plus, Scale, Edit, Search, Filter, Tag, BarChart, Download } from './Icons';
+import { Plus, Scale, Edit, Search, Filter, Tag, BarChart, Download, QrCode, X } from './Icons';
 import { updateItemInDB } from '../services/db';
 
 interface DashboardProps {
@@ -28,6 +28,7 @@ const Dashboard: React.FC<DashboardProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState<ItemType | 'ALL'>('ALL');
   const [statusFilter, setStatusFilter] = useState<ItemStatus | 'ALL'>('ALL');
+  const [qrItem, setQrItem] = useState<CollectibleItem | null>(null);
 
   // Statistics Calculation
   const totalItems = items.length;
@@ -107,6 +108,35 @@ const Dashboard: React.FC<DashboardProps> = ({
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
+      {/* QR Code Modal */}
+      {qrItem && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+          <div className="bg-white p-8 rounded-2xl max-w-sm w-full relative text-center">
+            <button 
+              onClick={() => setQrItem(null)}
+              className="absolute top-4 right-4 p-2 hover:bg-slate-100 rounded-full text-slate-500"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            
+            <h3 className="text-xl font-bold text-slate-800 mb-2">קוד QR לפריט</h3>
+            <p className="text-slate-500 mb-6 text-sm">{qrItem.analysis?.itemName}</p>
+            
+            <div className="flex justify-center mb-6">
+              <img 
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(window.location.origin + '/?product=' + qrItem.id)}`} 
+                alt="Item QR Code"
+                className="w-48 h-48 border-2 border-slate-100 p-2 rounded-lg"
+              />
+            </div>
+            
+            <div className="text-xs bg-blue-50 text-blue-800 p-3 rounded-lg border border-blue-100">
+              הדפס את הקוד והדבק על המעטפה/אלבום של הפריט. סריקה תוביל ישירות לדף המוצר הדיגיטלי.
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
         <div className="flex items-center gap-4 w-full md:w-auto">
@@ -298,6 +328,13 @@ const Dashboard: React.FC<DashboardProps> = ({
                        className={`flex-1 py-1 text-xs rounded border font-medium transition-colors ${item.status === 'SOLD' ? 'border-green-200 bg-green-50 text-green-700 hover:bg-green-100' : 'border-red-200 bg-red-50 text-red-700 hover:bg-red-100'}`}
                      >
                        {item.status === 'SOLD' ? 'סמן כזמין' : 'סמן כנמכר'}
+                     </button>
+                     <button
+                       onClick={() => setQrItem(item)}
+                       className="py-1 px-3 rounded border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 transition-colors"
+                       title="הצג קוד QR"
+                     >
+                       <QrCode className="w-4 h-4" />
                      </button>
                    </div>
 

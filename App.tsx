@@ -53,9 +53,24 @@ const App: React.FC = () => {
         if (savedProfile) {
           setProfile(savedProfile);
           
-          // If profile exists, ALWAYS go to storefront by default for public users
-          // The setup page is only for initial creation or explicit admin edit
-          setView('storefront');
+          // DEEP LINKING CHECK
+          // Check if there is a 'product' query param in the URL
+          const urlParams = new URLSearchParams(window.location.search);
+          const productId = urlParams.get('product');
+
+          if (productId) {
+            const product = savedItems.find(i => i.id === productId);
+            if (product) {
+              setSelectedProduct(product);
+              setView('product');
+            } else {
+              // Product not found, default to storefront
+              setView('storefront');
+            }
+          } else {
+            // No deep link, default to storefront
+            setView('storefront');
+          }
           
           // Legacy check: If profile exists but no password, force setup to add password
           if (!savedProfile.password) {
