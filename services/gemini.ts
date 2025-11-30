@@ -4,7 +4,7 @@ import { ItemType, AIAnalysisResult } from "../types";
 import { getProfileFromDB } from "./db";
 
 // Helper to get the API Key. 
-// Logic: Use override if provided -> Use DB if available -> Fallback to process.env
+// Logic: Use override if provided -> Use DB if available -> Fallback to empty string (Client side cannot access process.env)
 const getApiKey = async (override?: string): Promise<string> => {
   if (override && override.trim() !== '') return override;
 
@@ -17,7 +17,8 @@ const getApiKey = async (override?: string): Promise<string> => {
     console.warn("Could not fetch profile for API Key", e);
   }
 
-  return process.env.API_KEY || '';
+  // Fallback is empty. We strictly enforce UI configuration now.
+  return '';
 };
 
 export const analyzeCollectibleItem = async (

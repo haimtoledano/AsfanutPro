@@ -72,8 +72,8 @@ const App: React.FC = () => {
             setView('storefront');
           }
           
-          // Legacy check: If profile exists but no password, force setup to add password
-          if (!savedProfile.password) {
+          // Legacy check: If profile exists but no password OR no API key, force setup
+          if (!savedProfile.password || !savedProfile.apiKey) {
             setView('setup');
           } 
         } else {
@@ -163,7 +163,10 @@ const App: React.FC = () => {
       case 'setup':
         // If a profile exists but user is not authenticated, do not show setup.
         // Redirect to login or show login component.
-        if (profile && !isAuthenticated) {
+        // UNLESS the profile is missing critical data like apiKey/password, then we allow setup for repair.
+        const isRepairMode = profile && (!profile.apiKey || !profile.password);
+
+        if (profile && !isAuthenticated && !isRepairMode) {
           return (
             <Login 
               profile={profile} 
@@ -181,7 +184,7 @@ const App: React.FC = () => {
           <Setup 
             initialProfile={profile} 
             onSave={saveProfile} 
-            onCancel={profile ? () => setView('dashboard') : undefined} 
+            onCancel={profile && !isRepairMode ? () => setView('dashboard') : undefined} 
           />
         );
       
