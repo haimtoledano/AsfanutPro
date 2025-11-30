@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Asfanut Pro</title>
     <script>
-      // Shim for process.env to prevent "process is not defined" errors in browser
+      // Shim for process.env
       window.process = window.process || { env: { API_KEY: '' } };
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -17,20 +17,10 @@
         font-family: 'Heebo', sans-serif;
         background-color: #f8fafc;
       }
-      /* Custom scrollbar for better aesthetics */
-      ::-webkit-scrollbar {
-        width: 8px;
-      }
-      ::-webkit-scrollbar-track {
-        background: #f1f1f1;
-      }
-      ::-webkit-scrollbar-thumb {
-        background: #cbd5e1;
-        border-radius: 4px;
-      }
-      ::-webkit-scrollbar-thumb:hover {
-        background: #94a3b8;
-      }
+      ::-webkit-scrollbar { width: 8px; }
+      ::-webkit-scrollbar-track { background: #f1f1f1; }
+      ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+      ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
       .loader {
         border: 4px solid #f3f3f3;
         border-top: 4px solid #3498db;
@@ -48,18 +38,18 @@
   <script type="importmap">
 {
   "imports": {
-    "uuid": "https://aistudiocdn.com/uuid@^13.0.0",
-    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.555.0",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
-    "react/": "https://aistudiocdn.com/react@^19.2.0/",
     "react": "https://aistudiocdn.com/react@^19.2.0",
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "path": "https://aistudiocdn.com/path@^0.12.7",
-    "module": "https://aistudiocdn.com/module@^2.0.0",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
     "express": "https://aistudiocdn.com/express@^5.1.0",
+    "module": "https://aistudiocdn.com/module@^2.0.0",
+    "cors": "https://aistudiocdn.com/cors@^2.8.5",
     "body-parser": "https://aistudiocdn.com/body-parser@^2.2.1",
+    "path": "https://aistudiocdn.com/path@^0.12.7",
     "url": "https://aistudiocdn.com/url@^0.11.4",
-    "cors": "https://aistudiocdn.com/cors@^2.8.5"
+    "vite": "https://aistudiocdn.com/vite@^7.2.4",
+    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.1"
   }
 }
 </script>
@@ -71,6 +61,6 @@
         <p style="color: #64748b; font-weight: 500;">טוען מערכת...</p>
       </div>
     </div>
-    <script type="module" src="./index.tsx"></script>
+    <script type="module" src="/index.tsx"></script>
   </body>
 </html>
