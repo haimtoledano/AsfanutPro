@@ -1,7 +1,14 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { ItemType, AIAnalysisResult } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Lazy initialization to prevent crash on load if env is missing
+const getAIClient = () => {
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) {
+    console.warn("API Key is missing from process.env");
+  }
+  return new GoogleGenAI({ apiKey: apiKey || 'DUMMY_KEY_FOR_Safety' });
+};
 
 export const analyzeCollectibleItem = async (
   frontImageBase64: string,
@@ -20,6 +27,7 @@ export const analyzeCollectibleItem = async (
   `;
 
   try {
+    const ai = getAIClient();
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
       contents: {
@@ -82,6 +90,7 @@ export const analyzeLogoColor = async (imageBase64: string): Promise<string[]> =
   `;
 
   try {
+    const ai = getAIClient();
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
       contents: {

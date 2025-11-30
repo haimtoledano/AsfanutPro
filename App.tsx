@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { ViewState, StoreProfile, CollectibleItem, ItemType, AIAnalysisResult } from './types';
 import Setup from './components/Setup';
@@ -9,6 +8,7 @@ import Legal from './components/Legal';
 import Storefront from './components/Storefront';
 import ProductView from './components/ProductView';
 import Login from './components/Login';
+import { AlertTriangle } from './components/Icons';
 import { 
   getProfileFromDB, 
   getItemsFromDB, 
@@ -24,6 +24,7 @@ const App: React.FC = () => {
   const [selectedProduct, setSelectedProduct] = useState<CollectibleItem | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSecure, setIsSecure] = useState(true);
   
   // State for analysis/editing workflow
   // Used for both NEW items (from scanner) and EDITING existing items
@@ -36,6 +37,11 @@ const App: React.FC = () => {
   } | null>(null);
 
   useEffect(() => {
+    // Check for secure context (HTTPS or localhost)
+    if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+      setIsSecure(false);
+    }
+
     const initData = async () => {
       try {
         const savedProfile = await getProfileFromDB();
@@ -216,6 +222,12 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 pb-12">
+      {!isSecure && (
+        <div className="bg-red-600 text-white p-2 text-center text-sm font-bold flex items-center justify-center gap-2">
+           <AlertTriangle className="w-4 h-4" />
+           שים לב: האתר לא מאובטח (HTTP). המצלמה לא תעבוד. אנא עבור ל-HTTPS או Localhost.
+        </div>
+      )}
       {renderView()}
     </div>
   );
